@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="pt-BR" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Preparação para Redação EAOAP</title>
     <!-- Chosen Palette: Slate & Amber -->
-    <!-- Application Structure Plan: A single-page dashboard designed for strategic study. It begins with a summary of the exam's evaluation criteria presented as clear cards. The core is an interactive horizontal bar chart visualizing the probability of different thematic clusters. Clicking on a theme in the chart dynamically displays detailed analysis and sub-topics in a dedicated section below. The final section provides actionable study recommendations. A new section is added for an AI-powered argumentation point generator, allowing users to select a theme and receive generated arguments. This structure transforms the linear report into an exploratory tool, allowing candidates to quickly grasp priorities and delve into specifics as needed, enhancing usability and engagement. -->
-    <!-- Visualization & Content Choices: Report Info: Exam evaluation criteria -> Goal: Inform -> Viz/Method: Styled cards with icons (HTML/CSS) for quick scanning. Interaction: Hover effects. Report Info: Thematic probability matrix -> Goal: Compare & Guide -> Viz/Method: Interactive horizontal bar chart (Chart.js/Canvas) to visually rank themes. Interaction: Clicks on chart bars filter the detailed content view. Report Info: Detailed theme analysis -> Goal: Organize & Inform -> Viz/Method: Dynamically updated content blocks (JS-controlled divs). Interaction: Content is revealed based on chart selection. Report Info: Argumentation point generation -> Goal: Assist in content creation -> Viz/Method: Dropdown for theme selection, button to trigger LLM call, and a list to display generated points (HTML/CSS/JS). Interaction: User selects theme, clicks button, AI generates points. This design avoids static data presentation and promotes active exploration and content generation. -->
+    <!-- Application Structure Plan: A single-page dashboard designed for strategic study. It begins with a summary of the exam's evaluation criteria presented as clear cards. The core is an interactive horizontal bar chart visualizing the probability of different thematic clusters. Clicking on a theme in the chart dynamically displays detailed analysis and sub-topics in a dedicated section below. The final section provides actionable study recommendations. A new section is added for an AI-powered argumentation point generator, allowing users to select a theme and receive generated arguments. A second AI-powered section is added to generate reflection questions, further aiding critical thinking. A responsive sidenav is introduced for mobile navigation, enhancing accessibility and user flow. All major sections now feature scroll-reveal animations for a smoother user experience. -->
+    <!-- Visualization & Content Choices: Report Info: Exam evaluation criteria -> Goal: Inform -> Viz/Method: Styled cards with icons (HTML/CSS) for quick scanning. Interaction: Hover effects, scroll-reveal. Report Info: Thematic probability matrix -> Goal: Compare & Guide -> Viz/Method: Interactive horizontal bar chart (Chart.js/Canvas) to visually rank themes. Interaction: Clicks on chart bars filter the detailed content view. Report Info: Detailed theme analysis -> Goal: Organize & Inform -> Viz/Method: Dynamically updated content blocks (JS-controlled divs). Interaction: Content is revealed based on chart selection, scroll-reveal. Report Info: Argumentation point generation -> Goal: Assist in content creation -> Viz/Method: Dropdown for theme selection, button to trigger LLM call, and a list to display generated points (HTML/CSS/JS). Interaction: User selects theme, clicks button, AI generates points, scroll-reveal. Report Info: Reflection question generation -> Goal: Stimulate critical thinking -> Viz/Method: Dropdown for theme selection, button to trigger LLM call, and a list to display generated questions (HTML/CSS/JS). Interaction: User selects theme, clicks button, AI generates questions, scroll-reveal. This design avoids static data presentation and promotes active exploration, content generation, and critical engagement. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -32,10 +32,11 @@
                 height: 400px;
             }
         }
+        /* Base for scroll-reveal animation */
         .content-fade {
-            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
             opacity: 0;
             transform: translateY(20px);
+            transition: opacity 0.7s ease-out, transform 0.7s ease-out;
         }
         .content-fade.visible {
             opacity: 1;
@@ -49,20 +50,45 @@
     <header class="bg-slate-800 text-white shadow-lg sticky top-0 z-50">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
             <h1 class="text-xl md:text-2xl font-bold text-amber-400">Análise Estratégica EAOAP</h1>
+            <!-- Mobile Hamburger -->
+            <button id="menuButton" class="md:hidden p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
+                <div class="w-6 h-0.5 bg-white mb-1"></div>
+                <div class="w-6 h-0.5 bg-white mb-1"></div>
+                <div class="w-6 h-0.5 bg-white"></div>
+            </button>
             <nav class="hidden md:flex space-x-6 font-medium">
                 <a href="#padroes" class="hover:text-amber-400 transition-colors">Padrões</a>
                 <a href="#probabilidade" class="hover:text-amber-400 transition-colors">Probabilidade</a>
                 <a href="#temas" class="hover:text-amber-400 transition-colors">Temas</a>
                 <a href="#gerador-argumentos" class="hover:text-amber-400 transition-colors">Gerador ✨</a>
+                <a href="#gerador-perguntas" class="hover:text-amber-400 transition-colors">Perguntas 🧠</a>
                 <a href="#recomendacoes" class="hover:text-amber-400 transition-colors">Recomendações</a>
             </nav>
         </div>
     </header>
 
+    <!-- Sidenav Overlay -->
+    <div id="sidenavOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+
+    <!-- Sidenav -->
+    <nav id="sidenav" class="fixed top-0 left-0 w-64 h-full bg-slate-900 text-white z-50 transform -translate-x-full transition-transform duration-300 ease-in-out md:hidden">
+        <div class="p-6">
+            <h2 class="text-2xl font-bold text-amber-400 mb-6">Menu</h2>
+            <ul class="space-y-4">
+                <li><a href="#padroes" class="block py-2 px-4 rounded hover:bg-slate-700 transition-colors sidenav-link">Padrões</a></li>
+                <li><a href="#probabilidade" class="block py-2 px-4 rounded hover:bg-slate-700 transition-colors sidenav-link">Probabilidade</a></li>
+                <li><a href="#temas" class="block py-2 px-4 rounded hover:bg-slate-700 transition-colors sidenav-link">Temas</a></li>
+                <li><a href="#gerador-argumentos" class="block py-2 px-4 rounded hover:bg-slate-700 transition-colors sidenav-link">Gerador de Argumentos</a></li>
+                <li><a href="#gerador-perguntas" class="block py-2 px-4 rounded hover:bg-slate-700 transition-colors sidenav-link">Gerador de Perguntas</a></li>
+                <li><a href="#recomendacoes" class="block py-2 px-4 rounded hover:bg-slate-700 transition-colors sidenav-link">Recomendações</a></li>
+            </ul>
+        </div>
+    </nav>
+
     <main class="container mx-auto p-4 md:p-8">
 
         <!-- Introduction -->
-        <section id="intro" class="text-center mb-16">
+        <section id="intro" class="text-center mb-16 content-fade">
             <h2 class="text-4xl font-extrabold text-slate-800 mb-4">Painel de Preparação para a Redação EAOAP</h2>
             <p class="max-w-3xl mx-auto text-lg text-slate-600">
                 Esta é uma ferramenta interativa projetada para otimizar seus estudos. Explore os critérios de avaliação, analise a probabilidade dos temas mais relevantes e aprofunde-se nas áreas de interesse estratégico da Força Aérea Brasileira (FAB) para alcançar o sucesso na sua prova.
@@ -70,7 +96,7 @@
         </section>
 
         <!-- Section 1: Exam Standards -->
-        <section id="padroes" class="mb-16">
+        <section id="padroes" class="mb-16 content-fade">
             <h3 class="text-3xl font-bold text-slate-800 text-center mb-2">Padrões e Critérios de Avaliação</h3>
             <p class="text-center text-slate-600 mb-10 max-w-2xl mx-auto">A redação do EAOAP avalia sua capacidade de argumentação, profundidade de conhecimento e domínio da língua portuguesa. Entenda os pilares da correção e suas penalidades para não perder pontos cruciais.</p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -99,7 +125,7 @@
         </section>
 
         <!-- Section 2: Thematic Probability Dashboard -->
-        <section id="probabilidade" class="mb-16 bg-white p-6 md:p-8 rounded-2xl shadow-lg">
+        <section id="probabilidade" class="mb-16 bg-white p-6 md:p-8 rounded-2xl shadow-lg content-fade">
             <h3 class="text-3xl font-bold text-slate-800 text-center mb-2">Matriz de Probabilidade dos Temas</h3>
             <p class="text-center text-slate-600 mb-8 max-w-3xl mx-auto">Com base nos últimos exames e no alinhamento estratégico da FAB, este gráfico visualiza os clusters temáticos com maior probabilidade de serem abordados. <strong class="text-amber-600">Clique em uma barra</strong> para explorar os detalhes do tema.</p>
             <div class="chart-container h-96 md:h-[450px]">
@@ -108,7 +134,7 @@
         </section>
 
         <!-- Section 3: Detailed Theme Exploration -->
-        <section id="temas" class="min-h-[500px]">
+        <section id="temas" class="min-h-[500px] content-fade">
             <div id="tema-placeholder" class="text-center py-20">
                 <h3 class="text-2xl font-bold text-slate-700 mb-4">Explore os Temas em Detalhe</h3>
                 <p class="text-slate-500 text-lg max-w-xl mx-auto">Selecione um cluster temático no gráfico acima para ver a análise aprofundada, subtemas relevantes e sua conexão com as prioridades da Força Aérea Brasileira.</p>
@@ -121,7 +147,7 @@
         </section>
 
         <!-- Section 4: Argumentation Points Generator -->
-        <section id="gerador-argumentos" class="mt-16 pt-16 border-t border-slate-200 bg-white p-6 md:p-8 rounded-2xl shadow-lg">
+        <section id="gerador-argumentos" class="mt-16 pt-16 border-t border-slate-200 bg-white p-6 md:p-8 rounded-2xl shadow-lg content-fade">
             <h3 class="text-3xl font-bold text-slate-800 text-center mb-2">Gerador de Pontos de Argumentação ✨</h3>
             <p class="text-center text-slate-600 mb-8 max-w-3xl mx-auto">Utilize a inteligência artificial para gerar pontos de argumentação concisos e relevantes para o tema que você está estudando. Uma ferramenta essencial para aprofundar seu repertório e estruturar suas ideias.</p>
             
@@ -152,9 +178,41 @@
             </div>
         </section>
 
+        <!-- Section 5: Reflection Questions Generator -->
+        <section id="gerador-perguntas" class="mt-16 pt-16 border-t border-slate-200 bg-white p-6 md:p-8 rounded-2xl shadow-lg content-fade">
+            <h3 class="text-3xl font-bold text-slate-800 text-center mb-2">Gerador de Perguntas para Reflexão 🧠</h3>
+            <p class="text-center text-slate-600 mb-8 max-w-3xl mx-auto">Estimule seu pensamento crítico gerando perguntas estratégicas sobre os temas mais relevantes, ajudando a aprofundar sua análise para a redação.</p>
 
-        <!-- Section 5: Strategic Recommendations -->
-        <section id="recomendacoes" class="mt-16 pt-16 border-t border-slate-200">
+            <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4 mb-8">
+                <label for="perguntaTemaSelect" class="text-lg font-medium text-slate-700">Escolha um Tema:</label>
+                <select id="perguntaTemaSelect" class="p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-700">
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+                <button id="gerarPerguntasBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-colors flex items-center justify-center space-x-2">
+                    <span>Gerar Perguntas para Reflexão 🤔</span>
+                </button>
+            </div>
+
+            <div id="loadingPerguntasSpinner" class="hidden text-center mt-6">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                <p class="text-slate-500 mt-2">Pensando em perguntas...</p>
+            </div>
+
+            <div id="errorPerguntasContainer" class="text-red-500 text-center mt-4 hidden">
+                Ocorreu um erro ao gerar as perguntas. Tente novamente mais tarde.
+            </div>
+
+            <div id="perguntasGeradas" class="mt-8 bg-slate-50 p-6 rounded-lg border border-slate-200 hidden">
+                <h4 class="text-xl font-bold text-slate-800 mb-4 text-center">Perguntas Geradas:</h4>
+                <ul id="perguntasList" class="list-disc pl-5 space-y-2 text-slate-700">
+                    <!-- Generated questions will be displayed here -->
+                </ul>
+            </div>
+        </section>
+
+
+        <!-- Section 6: Strategic Recommendations -->
+        <section id="recomendacoes" class="mt-16 pt-16 border-t border-slate-200 content-fade">
             <h3 class="text-3xl font-bold text-slate-800 text-center mb-2">Recomendações Estratégicas</h3>
             <p class="text-center text-slate-600 mb-10 max-w-2xl mx-auto">Siga estes passos para construir uma preparação sólida e assertiva, focando no que realmente importa para a prova de redação do EAOAP.</p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -410,6 +468,58 @@
 
             }
 
+            // Sidenav logic
+            const menuButton = document.getElementById('menuButton');
+            const sidenav = document.getElementById('sidenav');
+            const sidenavOverlay = document.getElementById('sidenavOverlay');
+            const sidenavLinks = document.querySelectorAll('.sidenav-link');
+
+            menuButton.addEventListener('click', () => {
+                sidenav.classList.toggle('-translate-x-full');
+                sidenavOverlay.classList.toggle('hidden');
+            });
+
+            sidenavOverlay.addEventListener('click', () => {
+                sidenav.classList.add('-translate-x-full');
+                sidenavOverlay.classList.add('hidden');
+            });
+
+            sidenavLinks.forEach(link => {
+                link.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    const targetId = link.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth' });
+                        sidenav.classList.add('-translate-x-full');
+                        sidenavOverlay.classList.add('hidden');
+                    }
+                });
+            });
+
+            // Scroll Reveal Animation with Intersection Observer
+            const sections = document.querySelectorAll('section');
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    } else {
+                        // Optional: remove visible class when out of view if you want re-trigger on scroll back
+                        // entry.target.classList.remove('visible');
+                    }
+                });
+            }, {
+                threshold: 0.1 // Trigger when 10% of the section is visible
+            });
+
+            sections.forEach(section => {
+                // Ensure the initial state is hidden for the animation
+                section.classList.add('content-fade');
+                observer.observe(section);
+            });
+
+
             // Gemini API Integration - Argumentation Generator
             const temaSelect = document.getElementById('temaSelect');
             const gerarArgumentosBtn = document.getElementById('gerarArgumentosBtn');
@@ -418,12 +528,23 @@
             const argumentosGeradosDiv = document.getElementById('argumentosGerados');
             const argumentosList = document.getElementById('argumentosList');
 
-            // Populate the theme dropdown
+            // Gemini API Integration - Reflection Questions Generator
+            const perguntaTemaSelect = document.getElementById('perguntaTemaSelect'); // Moved declaration here
+            const gerarPerguntasBtn = document.getElementById('gerarPerguntasBtn');
+            const loadingPerguntasSpinner = document.getElementById('loadingPerguntasSpinner');
+            const errorPerguntasContainer = document.getElementById('errorPerguntasContainer');
+            const perguntasGeradasDiv = document.getElementById('perguntasGeradas');
+            const perguntasList = document.getElementById('perguntasList');
+
+            // Populate the theme dropdowns
             appData.temas.forEach(tema => {
                 const option = document.createElement('option');
                 option.value = tema.cluster;
                 option.textContent = tema.cluster;
                 temaSelect.appendChild(option);
+
+                const perguntaOption = option.cloneNode(true); // Clone for the new dropdown
+                perguntaTemaSelect.appendChild(perguntaOption);
             });
 
             gerarArgumentosBtn.addEventListener('click', async () => {
@@ -455,7 +576,7 @@
                     }
                 };
 
-                const apiKey = "AIzaSyB7AyliYun2KKB2HA-Ui3M1gOFk7bLPyHM"; // If you want to use models other than gemini-2.0-flash or imagen-3.0-generate-002, provide an API key here. Otherwise, leave this as-is.
+                const apiKey = ""; // If you want to use models other than gemini-2.0-flash or imagen-3.0-generate-002, provide an API key here. Otherwise, leave this as-is.
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                 try {
@@ -494,6 +615,78 @@
                     console.error('Erro ao chamar a API Gemini:', error);
                 } finally {
                     loadingSpinner.classList.add('hidden');
+                }
+            });
+
+            // Gemini API Integration - Reflection Questions Generator
+            gerarPerguntasBtn.addEventListener('click', async () => {
+                const selectedTheme = perguntaTemaSelect.value;
+                if (!selectedTheme) {
+                    errorPerguntasContainer.textContent = 'Por favor, selecione um tema.';
+                    errorPerguntasContainer.classList.remove('hidden');
+                    perguntasGeradasDiv.classList.add('hidden');
+                    return;
+                }
+
+                loadingPerguntasSpinner.classList.remove('hidden');
+                errorPerguntasContainer.classList.add('hidden');
+                perguntasGeradasDiv.classList.add('hidden');
+                perguntasList.innerHTML = ''; // Clear previous questions
+
+                const prompt = `Gere 5 perguntas para reflexão sobre o tema "${selectedTheme} na Força Aérea Brasileira", que estimulem o pensamento crítico e aprofundem a análise estratégica. Cada pergunta deve ser concisa.`;
+                let chatHistory = [];
+                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                const payload = {
+                    contents: chatHistory,
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "ARRAY",
+                            items: { "type": "STRING" }
+                        }
+                    }
+                };
+
+                const apiKey = ""; // If you want to use models other than gemini-2.0-flash or imagen-3.0-generate-002, provide an API key here. Otherwise, leave this as-is.
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        const json = result.candidates[0].content.parts[0].text;
+                        const parsedJson = JSON.parse(json);
+
+                        if (Array.isArray(parsedJson)) {
+                            parsedJson.forEach(q => {
+                                const li = document.createElement('li');
+                                li.textContent = q;
+                                perguntasList.appendChild(li);
+                            });
+                            perguntasGeradasDiv.classList.remove('hidden');
+                            perguntasGeradasDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        } else {
+                            errorPerguntasContainer.textContent = 'Formato de resposta inesperado da IA. Tente novamente.';
+                            errorPerguntasContainer.classList.remove('hidden');
+                        }
+                    } else {
+                        errorPerguntasContainer.textContent = 'Não foi possível gerar as perguntas. Tente novamente.';
+                        errorPerguntasContainer.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    errorPerguntasContainer.textContent = 'Erro de conexão com o servidor. Verifique sua rede e tente novamente.';
+                    errorPerguntasContainer.classList.remove('hidden');
+                    console.error('Erro ao chamar a API Gemini:', error);
+                } finally {
+                    loadingPerguntasSpinner.classList.add('hidden');
                 }
             });
         });
