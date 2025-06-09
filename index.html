@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel de Preparação para Redação EAOAP</title>
     <!-- Chosen Palette: Slate & Amber -->
-    <!-- Application Structure Plan: A single-page dashboard designed for strategic study. It begins with a summary of the exam's evaluation criteria presented as clear cards. The core is an interactive horizontal bar chart visualizing the probability of different thematic clusters. Clicking on a theme in the chart dynamically displays detailed analysis and sub-topics in a dedicated section below. The final section provides actionable study recommendations. A new section is added for an AI-powered argumentation point generator, allowing users to select a theme and receive generated arguments. A second AI-powered section is added to generate reflection questions, further aiding critical thinking. A responsive sidenav is introduced for mobile navigation, enhancing accessibility and user flow. All major sections now feature scroll-reveal animations for a smoother user experience. -->
-    <!-- Visualization & Content Choices: Report Info: Exam evaluation criteria -> Goal: Inform -> Viz/Method: Styled cards with icons (HTML/CSS) for quick scanning. Interaction: Hover effects, scroll-reveal. Report Info: Thematic probability matrix -> Goal: Compare & Guide -> Viz/Method: Interactive horizontal bar chart (Chart.js/Canvas) to visually rank themes. Interaction: Clicks on chart bars filter the detailed content view. Report Info: Detailed theme analysis -> Goal: Organize & Inform -> Viz/Method: Dynamically updated content blocks (JS-controlled divs). Interaction: Content is revealed based on chart selection, scroll-reveal. Report Info: Argumentation point generation -> Goal: Assist in content creation -> Viz/Method: Dropdown for theme selection, button to trigger LLM call, and a list to display generated points (HTML/CSS/JS). Interaction: User selects theme, clicks button, AI generates points, scroll-reveal. Report Info: Reflection question generation -> Goal: Stimulate critical thinking -> Viz/Method: Dropdown for theme selection, button to trigger LLM call, and a list to display generated questions (HTML/CSS/JS). Interaction: User selects theme, clicks button, AI generates questions, scroll-reveal. This design avoids static data presentation and promotes active exploration, content generation, and critical engagement. -->
+    <!-- Application Structure Plan: A single-page dashboard designed for strategic study. It begins with a summary of the exam's evaluation criteria presented as clear cards. The core is an interactive horizontal bar chart visualizing the probability of different thematic clusters. Clicking on a theme in the chart dynamically displays detailed analysis and sub-topics in a dedicated section below. The final section provides actionable study recommendations. A new section is added for an AI-powered argumentation point generator, allowing users to select a theme and receive generated arguments. A second AI-powered section is added to generate reflection questions, further aiding critical thinking. A responsive sidenav is introduced for mobile navigation, enhancing accessibility and user flow. All major sections now feature scroll-reveal animations for a smoother user experience. A new "Add Custom Theme" section allows users to dynamically add new study themes to the application's data by entering structured text (not raw HTML). A dark theme toggle is added to switch between light and dark modes, with full Tailwind dark mode support for all UI elements. -->
+    <!-- Visualization & Content Choices: Report Info: Exam evaluation criteria -> Goal: Inform -> Viz/Method: Styled cards with icons (HTML/CSS) for quick scanning. Interaction: Hover effects, scroll-reveal. Report Info: Thematic probability matrix -> Goal: Compare & Guide -> Viz/Method: Interactive horizontal bar chart (Chart.js/Canvas) to visually rank themes. Interaction: Clicks on chart bars filter the detailed content view. Report Info: Detailed theme analysis -> Goal: Organize & Inform -> Viz/Method: Dynamically updated content blocks (JS-controlled divs). Interaction: Content is revealed based on chart selection, scroll-reveal. Report Info: Argumentation point generation -> Goal: Assist in content creation -> Viz/Method: Dropdown for theme selection, button to trigger LLM call, and a list to display generated points (HTML/CSS/JS). Interaction: User selects theme, clicks button, AI generates points, scroll-reveal. Report Info: Reflection question generation -> Goal: Stimulate critical thinking -> Viz/Method: Dropdown for theme selection, button to trigger LLM call, and a list to display generated questions (HTML/CSS/JS). Interaction: User selects theme, clicks button, AI generates questions, scroll-reveal. Report Info: Add Custom Theme -> Goal: Personalization & Ease of Use -> Viz/Method: Form with structured text input fields (HTML/CSS/JS) for subtheme titles and details. Interaction: User inputs text, submits form, JS constructs HTML, theme is added to data and UI. Report Info: Theme Toggle -> Goal: User Preference -> Viz/Method: Button (HTML/CSS/JS) to switch between light/dark modes. Interaction: User clicks button, UI and chart colors change. This design avoids static data presentation and promotes active exploration, content generation, critical engagement, and personalization with a user-friendly input system. -->
     <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -16,7 +16,17 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+        }
+        /* Default Light Mode */
+        html {
             background-color: #f8fafc; /* slate-50 */
+            color: #334155; /* slate-700 */
+        }
+        /* Dark Mode */
+        html.dark {
+            background-color: #1e293b; /* slate-800 */
+            color: #e2e8f0; /* slate-200 */
         }
         .chart-container {
             position: relative;
@@ -44,31 +54,38 @@
         }
     </style>
 </head>
-<body class="text-slate-700">
+<body class="text-slate-700 dark:text-slate-200">
 
     <!-- Header & Navigation -->
     <header class="bg-slate-800 text-white shadow-lg sticky top-0 z-50">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
             <h1 class="text-xl md:text-2xl font-bold text-amber-400">Análise Estratégica EAOAP</h1>
-            <!-- Mobile Hamburger -->
-            <button id="menuButton" class="md:hidden p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
-                <div class="w-6 h-0.5 bg-white mb-1"></div>
-                <div class="w-6 h-0.5 bg-white mb-1"></div>
-                <div class="w-6 h-0.5 bg-white"></div>
-            </button>
+            <div class="flex items-center space-x-4">
+                <!-- Dark Mode Toggle -->
+                <button id="themeToggle" class="p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors" aria-label="Alternar tema">
+                    <span id="themeIcon" class="text-2xl">☀️</span>
+                </button>
+                <!-- Mobile Hamburger -->
+                <button id="menuButton" class="md:hidden p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <div class="w-6 h-0.5 bg-white mb-1"></div>
+                    <div class="w-6 h-0.5 bg-white mb-1"></div>
+                    <div class="w-6 h-0.5 bg-white"></div>
+                </button>
+            </div>
             <nav class="hidden md:flex space-x-6 font-medium">
                 <a href="#padroes" class="hover:text-amber-400 transition-colors">Padrões</a>
                 <a href="#probabilidade" class="hover:text-amber-400 transition-colors">Probabilidade</a>
                 <a href="#temas" class="hover:text-amber-400 transition-colors">Temas</a>
                 <a href="#gerador-argumentos" class="hover:text-amber-400 transition-colors">Gerador ✨</a>
                 <a href="#gerador-perguntas" class="hover:text-amber-400 transition-colors">Perguntas 🧠</a>
+                <a href="#adicionar-tema" class="hover:text-amber-400 transition-colors">Adicionar Tema +</a>
                 <a href="#recomendacoes" class="hover:text-amber-400 transition-colors">Recomendações</a>
             </nav>
         </div>
     </header>
 
     <!-- Sidenav Overlay -->
-    <div id="sidenavOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+    <div id="sidenavOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden transition-opacity duration-300"></div>
 
     <!-- Sidenav -->
     <nav id="sidenav" class="fixed top-0 left-0 w-64 h-full bg-slate-900 text-white z-50 transform -translate-x-full transition-transform duration-300 ease-in-out md:hidden">
@@ -80,6 +97,7 @@
                 <li><a href="#temas" class="block py-2 px-4 rounded hover:bg-slate-700 transition-colors sidenav-link">Temas</a></li>
                 <li><a href="#gerador-argumentos" class="block py-2 px-4 rounded hover:bg-slate-700 transition-colors sidenav-link">Gerador de Argumentos</a></li>
                 <li><a href="#gerador-perguntas" class="block py-2 px-4 rounded hover:bg-slate-700 transition-colors sidenav-link">Gerador de Perguntas</a></li>
+                <li><a href="#adicionar-tema" class="block py-2 px-4 rounded hover:bg-slate-700 transition-colors sidenav-link">Adicionar Tema</a></li>
                 <li><a href="#recomendacoes" class="block py-2 px-4 rounded hover:bg-slate-700 transition-colors sidenav-link">Recomendações</a></li>
             </ul>
         </div>
@@ -89,45 +107,45 @@
 
         <!-- Introduction -->
         <section id="intro" class="text-center mb-16 content-fade">
-            <h2 class="text-4xl font-extrabold text-slate-800 mb-4">Painel de Preparação para a Redação EAOAP</h2>
-            <p class="max-w-3xl mx-auto text-lg text-slate-600">
+            <h2 class="text-4xl font-extrabold text-slate-800 dark:text-slate-50 mb-4">Painel de Preparação para a Redação EAOAP</h2>
+            <p class="max-w-3xl mx-auto text-lg text-slate-700 dark:text-slate-300">
                 Esta é uma ferramenta interativa projetada para otimizar seus estudos. Explore os critérios de avaliação, analise a probabilidade dos temas mais relevantes e aprofunde-se nas áreas de interesse estratégico da Força Aérea Brasileira (FAB) para alcançar o sucesso na sua prova.
             </p>
         </section>
 
         <!-- Section 1: Exam Standards -->
         <section id="padroes" class="mb-16 content-fade">
-            <h3 class="text-3xl font-bold text-slate-800 text-center mb-2">Padrões e Critérios de Avaliação</h3>
-            <p class="text-center text-slate-600 mb-10 max-w-2xl mx-auto">A redação do EAOAP avalia sua capacidade de argumentação, profundidade de conhecimento e domínio da língua portuguesa. Entenda os pilares da correção e suas penalidades para não perder pontos cruciais.</p>
+            <h3 class="text-3xl font-bold text-slate-800 dark:text-slate-50 text-center mb-2">Padrões e Critérios de Avaliação</h3>
+            <p class="text-center text-slate-700 dark:text-slate-300 mb-10 max-w-2xl mx-auto">A redação do EAOAP avalia sua capacidade de argumentação, profundidade de conhecimento e domínio da língua portuguesa. Entenda os pilares da correção e suas penalidades para não perder pontos cruciais.</p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <!-- Expression Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-slate-500 hover:shadow-xl transition-shadow">
-                    <h4 class="text-xl font-bold text-slate-800 mb-2">Expressão</h4>
-                    <p class="text-slate-600 mb-4">Avalia a correção gramatical e clareza. Inclui pontuação, ortografia, vocabulário e morfossintaxe.</p>
-                    <div class="text-2xl font-bold text-red-500 bg-red-100 rounded-lg p-3 text-center">-0,2000 pts</div>
-                    <p class="text-sm text-slate-500 mt-2 text-center">por cada erro cometido.</p>
+                <div class="bg-white dark:bg-slate-700 p-6 rounded-xl shadow-md border-t-4 border-slate-500 dark:border-slate-600 hover:shadow-xl transition-shadow">
+                    <h4 class="text-xl font-bold text-slate-800 dark:text-slate-50 mb-2">Expressão</h4>
+                    <p class="text-slate-700 dark:text-slate-300 mb-4">Avalia a correção gramatical e clareza. Inclui pontuação, ortografia, vocabulário e morfossintaxe.</p>
+                    <div class="text-2xl font-bold text-red-500 bg-red-100 dark:bg-red-900 dark:text-red-300 rounded-lg p-3 text-center">-0,2000 pts</div>
+                    <p class="text-sm text-slate-600 dark:text-slate-400 mt-2 text-center">por cada erro cometido.</p>
                 </div>
                 <!-- Structure Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-slate-500 hover:shadow-xl transition-shadow">
-                    <h4 class="text-xl font-bold text-slate-800 mb-2">Estrutura</h4>
-                    <p class="text-slate-600 mb-4">Foco na organização lógica do texto, principalmente a correta divisão em parágrafos.</p>
-                    <div class="text-2xl font-bold text-orange-500 bg-orange-100 rounded-lg p-3 text-center">Até -0,5000 pts</div>
-                     <p class="text-sm text-slate-500 mt-2 text-center">por erro de paragrafação.</p>
+                <div class="bg-white dark:bg-slate-700 p-6 rounded-xl shadow-md border-t-4 border-slate-500 dark:border-slate-600 hover:shadow-xl transition-shadow">
+                    <h4 class="text-xl font-bold text-slate-800 dark:text-slate-50 mb-2">Estrutura</h4>
+                    <p class="text-slate-700 dark:text-slate-300 mb-4">Foco na organização lógica do texto, principalmente a correta divisão em parágrafos.</p>
+                    <div class="text-2xl font-bold text-orange-500 bg-orange-100 dark:bg-orange-900 dark:text-orange-300 rounded-lg p-3 text-center">Até -0,5000 pts</div>
+                     <p class="text-sm text-slate-600 dark:text-slate-400 mt-2 text-center">por erro de paragrafação.</p>
                 </div>
                 <!-- Content Card -->
-                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-slate-500 hover:shadow-xl transition-shadow">
-                    <h4 class="text-xl font-bold text-slate-800 mb-2">Conteúdo</h4>
-                    <p class="text-slate-600 mb-4">O pilar mais importante. Avalia a pertinência ao tema, a qualidade da argumentação e a informatividade.</p>
-                    <div class="text-2xl font-bold text-green-600 bg-green-100 rounded-lg p-3 text-center">Até -4,0000 pts</div>
-                     <p class="text-sm text-slate-500 mt-2 text-center">no total dos três quesitos.</p>
+                <div class="bg-white dark:bg-slate-700 p-6 rounded-xl shadow-md border-t-4 border-slate-500 dark:border-slate-600 hover:shadow-xl transition-shadow">
+                    <h4 class="text-xl font-bold text-slate-800 dark:text-slate-50 mb-2">Conteúdo</h4>
+                    <p class="text-slate-700 dark:text-slate-300 mb-4">O pilar mais importante. Avalia a pertinência ao tema, a qualidade da argumentação e a informatividade.</p>
+                    <div class="text-2xl font-bold text-green-600 bg-green-100 dark:bg-green-900 dark:text-green-300 rounded-lg p-3 text-center">Até -4,0000 pts</div>
+                     <p class="text-sm text-slate-600 dark:text-slate-400 mt-2 text-center">no total dos três quesitos.</p>
                 </div>
             </div>
         </section>
 
         <!-- Section 2: Thematic Probability Dashboard -->
-        <section id="probabilidade" class="mb-16 bg-white p-6 md:p-8 rounded-2xl shadow-lg content-fade">
-            <h3 class="text-3xl font-bold text-slate-800 text-center mb-2">Matriz de Probabilidade dos Temas</h3>
-            <p class="text-center text-slate-600 mb-8 max-w-3xl mx-auto">Com base nos últimos exames e no alinhamento estratégico da FAB, este gráfico visualiza os clusters temáticos com maior probabilidade de serem abordados. <strong class="text-amber-600">Clique em uma barra</strong> para explorar os detalhes do tema.</p>
+        <section id="probabilidade" class="mb-16 bg-white dark:bg-slate-700 p-6 md:p-8 rounded-2xl shadow-lg content-fade">
+            <h3 class="text-3xl font-bold text-slate-800 dark:text-slate-50 text-center mb-2">Matriz de Probabilidade dos Temas</h3>
+            <p class="text-center text-slate-700 dark:text-slate-300 mb-8 max-w-3xl mx-auto">Com base nos últimos exames e no alinhamento estratégico da FAB, este gráfico visualiza os clusters temáticos com maior probabilidade de serem abordados. <strong class="text-amber-600">Clique em uma barra</strong> para explorar os detalhes do tema.</p>
             <div class="chart-container h-96 md:h-[450px]">
                 <canvas id="temasChart"></canvas>
             </div>
@@ -136,24 +154,24 @@
         <!-- Section 3: Detailed Theme Exploration -->
         <section id="temas" class="min-h-[500px] content-fade">
             <div id="tema-placeholder" class="text-center py-20">
-                <h3 class="text-2xl font-bold text-slate-700 mb-4">Explore os Temas em Detalhe</h3>
-                <p class="text-slate-500 text-lg max-w-xl mx-auto">Selecione um cluster temático no gráfico acima para ver a análise aprofundada, subtemas relevantes e sua conexão com as prioridades da Força Aérea Brasileira.</p>
-                 <div class="mt-8 text-6xl text-slate-300">✈️</div>
+                <h3 class="text-2xl font-bold text-slate-700 dark:text-slate-200 mb-4">Explore os Temas em Detalhe</h3>
+                <p class="text-slate-600 dark:text-slate-400 text-lg max-w-xl mx-auto">Selecione um cluster temático no gráfico acima para ver a análise aprofundada, subtemas relevantes e sua conexão com as prioridades da Força Aérea Brasileira.</p>
+                 <div class="mt-8 text-6xl text-slate-300 dark:text-slate-500">✈️</div>
             </div>
             <div id="tema-detalhes" class="hidden">
-                 <h3 id="detalhe-titulo" class="text-3xl font-bold text-slate-800 text-center mb-10"></h3>
-                 <div id="detalhe-conteudo"></div>
+                 <h3 id="detalhe-titulo" class="text-3xl font-bold text-slate-800 dark:text-slate-50 text-center mb-10"></h3>
+                 <div id="detalhe-conteudo" class="text-slate-700 dark:text-slate-300"></div>
             </div>
         </section>
 
         <!-- Section 4: Argumentation Points Generator -->
-        <section id="gerador-argumentos" class="mt-16 pt-16 border-t border-slate-200 bg-white p-6 md:p-8 rounded-2xl shadow-lg content-fade">
-            <h3 class="text-3xl font-bold text-slate-800 text-center mb-2">Gerador de Pontos de Argumentação ✨</h3>
-            <p class="text-center text-slate-600 mb-8 max-w-3xl mx-auto">Utilize a inteligência artificial para gerar pontos de argumentação concisos e relevantes para o tema que você está estudando. Uma ferramenta essencial para aprofundar seu repertório e estruturar suas ideias.</p>
+        <section id="gerador-argumentos" class="mt-16 pt-16 border-t border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 p-6 md:p-8 rounded-2xl shadow-lg content-fade">
+            <h3 class="text-3xl font-bold text-slate-800 dark:text-slate-50 text-center mb-2">Gerador de Pontos de Argumentação ✨</h3>
+            <p class="text-center text-slate-700 dark:text-slate-300 mb-8 max-w-3xl mx-auto">Utilize a inteligência artificial para gerar pontos de argumentação concisos e relevantes para o tema que você está estudando. Uma ferramenta essencial para aprofundar seu repertório e estruturar suas ideias.</p>
             
             <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4 mb-8">
-                <label for="temaSelect" class="text-lg font-medium text-slate-700">Escolha um Tema:</label>
-                <select id="temaSelect" class="p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-700">
+                <label for="temaSelect" class="text-lg font-medium text-slate-700 dark:text-slate-200">Escolha um Tema:</label>
+                <select id="temaSelect" class="p-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                     <!-- Options will be populated by JavaScript -->
                 </select>
                 <button id="gerarArgumentosBtn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-colors flex items-center justify-center space-x-2">
@@ -162,30 +180,30 @@
             </div>
 
             <div id="loadingSpinner" class="hidden text-center mt-6">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-500 mx-auto"></div>
-                <p class="text-slate-500 mt-2">Gerando ideias...</p>
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-500 dark:border-slate-400 mx-auto"></div>
+                <p class="text-slate-600 dark:text-slate-400 mt-2">Gerando ideias...</p>
             </div>
 
             <div id="errorContainer" class="text-red-500 text-center mt-4 hidden">
                 Ocorreu um erro ao gerar os pontos de argumentação. Tente novamente mais tarde.
             </div>
 
-            <div id="argumentosGerados" class="mt-8 bg-slate-50 p-6 rounded-lg border border-slate-200 hidden">
-                <h4 class="text-xl font-bold text-slate-800 mb-4 text-center">Pontos Gerados:</h4>
-                <ul id="argumentosList" class="list-disc pl-5 space-y-2 text-slate-700">
+            <div id="argumentosGerados" class="mt-8 bg-slate-50 dark:bg-slate-600 p-6 rounded-lg border border-slate-200 dark:border-slate-600 hidden">
+                <h4 class="text-xl font-bold text-slate-800 dark:text-slate-50 mb-4 text-center">Pontos Gerados:</h4>
+                <ul id="argumentosList" class="list-disc pl-5 space-y-2 text-slate-700 dark:text-slate-200">
                     <!-- Generated arguments will be displayed here -->
                 </ul>
             </div>
         </section>
 
         <!-- Section 5: Reflection Questions Generator -->
-        <section id="gerador-perguntas" class="mt-16 pt-16 border-t border-slate-200 bg-white p-6 md:p-8 rounded-2xl shadow-lg content-fade">
-            <h3 class="text-3xl font-bold text-slate-800 text-center mb-2">Gerador de Perguntas para Reflexão 🧠</h3>
-            <p class="text-center text-slate-600 mb-8 max-w-3xl mx-auto">Estimule seu pensamento crítico gerando perguntas estratégicas sobre os temas mais relevantes, ajudando a aprofundar sua análise para a redação.</p>
+        <section id="gerador-perguntas" class="mt-16 pt-16 border-t border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 p-6 md:p-8 rounded-2xl shadow-lg content-fade">
+            <h3 class="text-3xl font-bold text-slate-800 dark:text-slate-50 text-center mb-2">Gerador de Perguntas para Reflexão 🧠</h3>
+            <p class="text-center text-slate-700 dark:text-slate-300 mb-8 max-w-3xl mx-auto">Estimule seu pensamento crítico gerando perguntas estratégicas sobre os temas mais relevantes, ajudando a aprofundar sua análise para a redação.</p>
 
             <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4 mb-8">
-                <label for="perguntaTemaSelect" class="text-lg font-medium text-slate-700">Escolha um Tema:</label>
-                <select id="perguntaTemaSelect" class="p-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-700">
+                <label for="perguntaTemaSelect" class="text-lg font-medium text-slate-700 dark:text-slate-200">Escolha um Tema:</label>
+                <select id="perguntaTemaSelect" class="p-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                     <!-- Options will be populated by JavaScript -->
                 </select>
                 <button id="gerarPerguntasBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-colors flex items-center justify-center space-x-2">
@@ -194,39 +212,91 @@
             </div>
 
             <div id="loadingPerguntasSpinner" class="hidden text-center mt-6">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-                <p class="text-slate-500 mt-2">Pensando em perguntas...</p>
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 dark:border-blue-400 mx-auto"></div>
+                <p class="text-slate-600 dark:text-slate-400 mt-2">Pensando em perguntas...</p>
             </div>
 
             <div id="errorPerguntasContainer" class="text-red-500 text-center mt-4 hidden">
                 Ocorreu um erro ao gerar as perguntas. Tente novamente mais tarde.
             </div>
 
-            <div id="perguntasGeradas" class="mt-8 bg-slate-50 p-6 rounded-lg border border-slate-200 hidden">
-                <h4 class="text-xl font-bold text-slate-800 mb-4 text-center">Perguntas Geradas:</h4>
-                <ul id="perguntasList" class="list-disc pl-5 space-y-2 text-slate-700">
+            <div id="perguntasGeradas" class="mt-8 bg-slate-50 dark:bg-slate-600 p-6 rounded-lg border border-slate-200 dark:border-slate-600 hidden">
+                <h4 class="text-xl font-bold text-slate-800 dark:text-slate-50 mb-4 text-center">Perguntas Geradas:</h4>
+                <ul id="perguntasList" class="list-disc pl-5 space-y-2 text-slate-700 dark:text-slate-200">
                     <!-- Generated questions will be displayed here -->
                 </ul>
             </div>
         </section>
 
+        <!-- Section 6: Add Custom Theme -->
+        <section id="adicionar-tema" class="mt-16 pt-16 border-t border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 p-6 md:p-8 rounded-2xl shadow-lg content-fade">
+            <h3 class="text-3xl font-bold text-slate-800 dark:text-slate-50 text-center mb-2">Adicionar Novo Tema de Estudo +</h3>
+            <p class="text-center text-slate-700 dark:text-slate-300 mb-8 max-w-3xl mx-auto">Personalize seu painel! Adicione seus próprios temas de estudo para que eles apareçam no gráfico de probabilidade e nos geradores de IA, sem precisar de conhecimento em HTML.</p>
+            
+            <form id="addThemeForm" class="space-y-6 max-w-xl mx-auto">
+                <div>
+                    <label for="newThemeCluster" class="block text-lg font-medium text-slate-700 dark:text-slate-200 mb-2">Nome do Tema Principal:</label>
+                    <input type="text" id="newThemeCluster" class="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-700 dark:bg-slate-800 dark:text-slate-200" placeholder="Ex: Criptografia Quântica" required>
+                </div>
+                <div>
+                    <label for="newThemeProb" class="block text-lg font-medium text-slate-700 dark:text-slate-200 mb-2">Probabilidade (0-100%):</label>
+                    <input type="number" id="newThemeProb" class="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-700 dark:bg-slate-800 dark:text-slate-200" min="0" max="100" placeholder="Ex: 70" required>
+                </div>
 
-        <!-- Section 6: Strategic Recommendations -->
-        <section id="recomendacoes" class="mt-16 pt-16 border-t border-slate-200 content-fade">
-            <h3 class="text-3xl font-bold text-slate-800 text-center mb-2">Recomendações Estratégicas</h3>
-            <p class="text-center text-slate-600 mb-10 max-w-2xl mx-auto">Siga estes passos para construir uma preparação sólida e assertiva, focando no que realmente importa para a prova de redação do EAOAP.</p>
+                <div class="space-y-4 p-4 border border-slate-200 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800">
+                    <p class="text-lg font-medium text-slate-700 dark:text-slate-200">Subtemas e Detalhes (Opcional, até 3):</p>
+                    <!-- Subtema 1 -->
+                    <div>
+                        <label for="newSubtheme1Title" class="block text-base font-medium text-slate-700 dark:text-slate-200 mb-1">Título do Subtema 1:</label>
+                        <input type="text" id="newSubtheme1Title" class="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-700 dark:bg-slate-900 dark:text-slate-200" placeholder="Ex: Impacto Social da IA">
+                        
+                        <label for="newSubtheme1Details" class="block text-base font-medium text-slate-700 dark:text-slate-200 mt-3 mb-1">Detalhes do Subtema 1:</label>
+                        <textarea id="newSubtheme1Details" class="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-700 dark:bg-slate-900 dark:text-slate-200 h-20" placeholder="Aprofunde aqui os detalhes deste subtema."></textarea>
+                    </div>
+
+                    <!-- Subtema 2 -->
+                    <div>
+                        <label for="newSubtheme2Title" class="block text-base font-medium text-slate-700 dark:text-slate-200 mb-1">Título do Subtema 2:</label>
+                        <input type="text" id="newSubtheme2Title" class="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-700 dark:bg-slate-900 dark:text-slate-200" placeholder="Ex: Aspectos Éticos e Legais">
+                        
+                        <label for="newSubtheme2Details" class="block text-base font-medium text-slate-700 dark:text-slate-200 mt-3 mb-1">Detalhes do Subtema 2:</label>
+                        <textarea id="newSubtheme2Details" class="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-700 dark:bg-slate-900 dark:text-slate-200 h-20" placeholder="Aprofunde aqui os detalhes deste subtema."></textarea>
+                    </div>
+
+                    <!-- Subtema 3 -->
+                    <div>
+                        <label for="newSubtheme3Title" class="block text-base font-medium text-slate-700 dark:text-slate-200 mb-1">Título do Subtema 3:</label>
+                        <input type="text" id="newSubtheme3Title" class="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-700 dark:bg-slate-900 dark:text-slate-200" placeholder="Ex: Desafios Tecnológicos e de Implantação">
+                        
+                        <label for="newSubtheme3Details" class="block text-base font-medium text-slate-700 dark:text-slate-200 mt-3 mb-1">Detalhes do Subtema 3:</label>
+                        <textarea id="newSubtheme3Details" class="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-500 text-slate-700 dark:bg-slate-900 dark:text-slate-200 h-20" placeholder="Aprofunde aqui os detalhes deste subtema."></textarea>
+                    </div>
+                </div>
+
+                <button type="submit" id="addThemeBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-colors flex items-center justify-center space-x-2">
+                    <span>Adicionar Tema Personalizado</span>
+                </button>
+                <div id="addThemeMessage" class="text-center mt-4 hidden"></div>
+            </form>
+        </section>
+
+
+        <!-- Section 7: Strategic Recommendations -->
+        <section id="recomendacoes" class="mt-16 pt-16 border-t border-slate-200 dark:border-slate-600 content-fade">
+            <h3 class="text-3xl font-bold text-slate-800 dark:text-slate-50 text-center mb-2">Recomendações Estratégicas</h3>
+            <p class="text-center text-slate-700 dark:text-slate-300 mb-10 max-w-2xl mx-auto">Siga estes passos para construir uma preparação sólida e assertiva, focando no que realmente importa para a prova de redação do EAOAP.</p>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-amber-500">
-                    <h4 class="text-xl font-bold text-slate-800 mb-2">Aprofunde-se nas Atualidades</h4>
-                    <p class="text-slate-600">Vá além das manchetes. Consulte fontes oficiais da FAB e do Ministério da Defesa. Entenda os projetos estratégicos (VLM-1, Programa SIRIUS) e o contexto geopolítico que os envolvem.</p>
+                <div class="bg-white dark:bg-slate-700 p-6 rounded-xl shadow-md border-t-4 border-amber-500 hover:shadow-xl transition-shadow dark:border-slate-600">
+                    <h4 class="text-xl font-bold text-slate-800 dark:text-slate-50 mb-2">Aprofunde-se nas Atualidades</h4>
+                    <p class="text-slate-700 dark:text-slate-300">Vá além das manchetes. Consulte fontes oficiais da FAB e do Ministério da Defesa. Entenda os projetos estratégicos (VLM-1, Programa SIRIUS) e o contexto geopolítico que os envolvem.</p>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-amber-500">
-                    <h4 class="text-xl font-bold text-slate-800 mb-2">Desenvolva sua Argumentação</h4>
-                    <p class="text-slate-600">Para cada tema, colete dados e exemplos concretos. Pratique a estruturação de argumentos lógicos. Use as informações deste painel para criar um repertório informativo e relevante para a prova.</p>
+                <div class="bg-white dark:bg-slate-700 p-6 rounded-xl shadow-md border-t-4 border-amber-500 hover:shadow-xl transition-shadow dark:border-slate-600">
+                    <h4 class="text-xl font-bold text-slate-800 dark:text-slate-50 mb-2">Desenvolva sua Argumentação</h4>
+                    <p class="text-slate-700 dark:text-slate-300">Para cada tema, colete dados e exemplos concretos. Pratique a estruturação de argumentos lógicos. Use as informações deste painel para criar um repertório informativo e relevante para a prova.</p>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-amber-500">
-                    <h4 class="text-xl font-bold text-slate-800 mb-2">Pratique e Revise com Rigor</h4>
-                    <p class="text-slate-600">Redija textos sob condições de tempo simuladas. Peça feedback e, principalmente, revise sua própria escrita com foco nos critérios de "Expressão". Cada erro evitado é um passo mais perto da aprovação.</p>
+                <div class="bg-white dark:bg-slate-700 p-6 rounded-xl shadow-md border-t-4 border-amber-500 hover:shadow-xl transition-shadow dark:border-slate-600">
+                    <h4 class="text-xl font-bold text-slate-800 dark:text-slate-50 mb-2">Pratique e Revise com Rigor</h4>
+                    <p class="text-slate-700 dark:text-slate-300">Redija textos sob condições de tempo simuladas. Peça feedback e, principalmente, revise sua própria escrita com foco nos critérios de "Expressão". Cada erro evitado é um passo mais perto da aprovação.</p>
                 </div>
             </div>
         </section>
@@ -250,16 +320,16 @@
                     conteudo: `
                         <div class="space-y-6">
                             <div>
-                                <h5 class="font-bold text-lg mb-2 text-slate-700">IA na Tomada de Decisão e Operações</h5>
-                                <p class="text-slate-600">O Brasil busca uma "IA Soberana", essencial para a autonomia e segurança. Para a FAB, isso significa sistemas de inteligência, vigilância e reconhecimento (ISR) seguros e não vulneráveis a controles externos, impactando diretamente a soberania nacional.</p>
+                                <h5 class="font-bold text-lg mb-2 text-slate-700 dark:text-slate-200">IA na Tomada de Decisão e Operações</h5>
+                                <p class="text-slate-700 dark:text-slate-300">O Brasil busca uma "IA Soberana", essencial para a autonomia e segurança. Para a FAB, isso significa sistemas de inteligência, vigilância e reconhecimento (ISR) seguros e não vulneráveis a controles externos, impactando diretamente a soberania nacional.</p>
                             </div>
                             <div>
-                                <h5 class="font-bold text-lg mb-2 text-slate-700">Desafios Éticos e Regulatórios</h5>
-                                <p class="text-slate-600">A integração da IA na defesa levanta debates sobre armas autônomas (LAWS), diretrizes éticas em conflitos e a segurança contra ciberataques. A redação pode exigir uma análise desses marcos regulatórios e dilemas morais.</p>
+                                <h5 class="font-bold text-lg mb-2 text-slate-700 dark:text-slate-200">Desafios Éticos e Regulatórios</h5>
+                                <p class="text-slate-700 dark:text-slate-300">A integração da IA na defesa levanta debates sobre armas autônomas (LAWS), diretrizes éticas em conflitos e a segurança contra ciberataques. A redação pode exigir uma análise desses marcos regulatórios e dilemas morais.</p>
                             </div>
                             <div>
-                                <h5 class="font-bold text-lg mb-2 text-slate-700">Futuro do Trabalho e Formação na FAB</h5>
-                                <p class="text-slate-600">A IA redefinirá funções, exigindo novas habilidades. O tema pode explorar como a FAB prepara seu capital humano para este futuro, focando em aprendizagem contínua, adaptabilidade e qualidades humanas insubstituíveis, como liderança e intuição estratégica.</p>
+                                <h5 class="font-bold text-lg mb-2 text-slate-700 dark:text-slate-200">Futuro do Trabalho e Formação na FAB</h5>
+                                <p class="text-slate-700 dark:text-slate-300">A IA redefinirá funções, exigindo novas habilidades. O tema pode explorar como a FAB prepara seu capital humano para este futuro, focando em aprendizagem contínua, adaptabilidade e qualidades humanas insubstituíveis, como liderança e intuição estratégica.</p>
                             </div>
                         </div>
                     `
@@ -273,16 +343,16 @@
                     conteudo: `
                          <div class="space-y-6">
                             <div>
-                                <h5 class="font-bold text-lg mb-2 text-slate-700">Ameaças e Resiliência de Infraestruturas</h5>
-                                <p class="text-slate-600">A intensa atividade do Centro de Defesa Cibernética da Aeronáutica (CDCAER) e a participação em exercícios como CRUZEX CYBER e Locked Shields (OTAN) mostram que a cibersegurança é uma prioridade máxima, garantindo a continuidade das operações aéreas e de comando.</p>
+                                <h5 class="font-bold text-lg mb-2 text-slate-700 dark:text-slate-200">Ameaças e Resiliência de Infraestruturas</h5>
+                                <p class="text-slate-700 dark:text-slate-300">A intensa atividade do Centro de Defesa Cibernética da Aeronáutica (CDCAER) e a participação em exercícios como CRUZEX CYBER e Locked Shields (OTAN) mostram que a cibersegurança é uma prioridade máxima, garantindo a continuidade das operações aéreas e de comando.</p>
                             </div>
                             <div>
-                                <h5 class="font-bold text-lg mb-2 text-slate-700">Ciberdefesa na Guerra Moderna</h5>
-                                <p class="text-slate-600">A integração de operações cibernéticas em grandes exercícios aéreos revela uma mudança de doutrina: a guerra cibernética é parte intrínseca das operações aéreas. O tema pode abordar operações multidomínio e a fusão entre o conflito físico e digital.</p>
+                                <h5 class="font-bold text-lg mb-2 text-slate-700 dark:text-slate-200">Ciberdefesa na Guerra Moderna</h5>
+                                <p class="text-slate-700 dark:text-slate-300">A integração de operações cibernéticas em grandes exercícios aéreos revela uma mudança de doutrina: a guerra cibernética é parte intrínseca das operações aéreas. O tema pode abordar operações multidomínio e a fusão entre o conflito físico e digital.</p>
                             </div>
                             <div>
-                                <h5 class="font-bold text-lg mb-2 text-slate-700">A Fronteira Quântica</h5>
-                                <p class="text-slate-600">A menção a "tecnologias quânticas" como a próxima fronteira para criptografia demonstra uma visão de futuro. A redação pode explorar as implicações da computação quântica para a segurança nacional e a necessidade de investimento em pesquisa avançada.</p>
+                                <h5 class="font-bold text-lg mb-2 text-slate-700 dark:text-slate-200">A Fronteira Quântica</h5>
+                                <p class="text-slate-700 dark:text-slate-300">A menção a "tecnologias quânticas" como a próxima fronteira para criptografia demonstra uma visão de futuro. A redação pode explorar as implicações da computação quântica para a segurança nacional e a necessidade de investimento em pesquisa avançada.</p>
                             </div>
                         </div>
                     `
@@ -296,16 +366,16 @@
                     conteudo: `
                          <div class="space-y-6">
                             <div>
-                                <h5 class="font-bold text-lg mb-2 text-slate-700">Avanços no Programa Espacial Brasileiro</h5>
-                                <p class="text-slate-600">A "Operação Potiguar", com o lançamento do foguete VS30, e o desenvolvimento do VLM-1, representam o impulso do Brasil por autonomia e competitividade no mercado espacial global. O tema pode focar na soberania nacional no espaço e nos benefícios estratégicos de um programa independente.</p>
+                                <h5 class="font-bold text-lg mb-2 text-slate-700 dark:text-slate-200">Avanços no Programa Espacial Brasileiro</h5>
+                                <p class="text-slate-700 dark:text-slate-300">A "Operação Potiguar", com o lançamento do foguete VS30, e o desenvolvimento do VLM-1, representam o impulso do Brasil por autonomia e competitividade no mercado espacial global. O tema pode focar na soberania nacional no espaço e nos benefícios estratégicos de um programa independente.</p>
                             </div>
                             <div>
-                                <h5 class="font-bold text-lg mb-2 text-slate-700">Aplicações em Defesa e Monitoramento</h5>
-                                <p class="text-slate-600">A tecnologia espacial é vital para inteligência, vigilância e reconhecimento (ISR). O tema pode explorar como o Brasil usa suas capacidades para controle de fronteiras, proteção da Amazônia e gerenciamento de desastres, tudo com implicações diretas na defesa.</p>
+                                <h5 class="font-bold text-lg mb-2 text-slate-700 dark:text-slate-200">Aplicações em Defesa e Monitoramento</h5>
+                                <p class="text-slate-700 dark:text-slate-300">A tecnologia espacial é vital para inteligência, vigilância e reconhecimento (ISR). O tema pode explorar como o Brasil usa suas capacidades para controle de fronteiras, proteção da Amazônia e gerenciamento de desastres, tudo com implicações diretas na defesa.</p>
                             </div>
                             <div>
-                                <h5 class="font-bold text-lg mb-2 text-slate-700">Brasil no Cenário Aeroespacial Global</h5>
-                                <p class="text-slate-600">A ambição de competir no mercado global levanta questões sobre cooperação internacional, parcerias tecnológicas e os desafios de se estabelecer em um domínio altamente competitivo. A redação pode abordar as implicações geopolíticas do poder espacial.</p>
+                                <h5 class="font-bold text-lg mb-2 text-slate-700 dark:text-slate-200">Brasil no Cenário Aeroespacial Global</h5>
+                                <p class="text-slate-700 dark:text-slate-300">A ambição de competir no mercado global levanta questões sobre cooperação internacional, parcerias tecnológicas e os desafios de se estabelecer em um domínio altamente competitivo. A redação pode abordar as implicações geopolíticas do poder espacial.</p>
                             </div>
                         </div>
                     `
@@ -319,16 +389,16 @@
                     conteudo: `
                          <div class="space-y-6">
                             <div>
-                                <h5 class="font-bold text-lg mb-2 text-slate-700">Tecnologias Quânticas</h5>
-                                <p class="text-slate-600">O investimento proativo das Forças Armadas em tecnologias quânticas (para criptografia e computação) sinaliza uma visão de longo prazo. O tema pode explorar o potencial disruptivo, a necessidade de adoção precoce e os desafios de desenvolver tais capacidades no Brasil.</p>
+                                <h5 class="font-bold text-lg mb-2 text-slate-700 dark:text-slate-200">Tecnologias Quânticas</h5>
+                                <p class="text-slate-700 dark:text-slate-300">O investimento proativo das Forças Armadas em tecnologias quânticas (para criptografia e computação) sinaliza uma visão de longo prazo. O tema pode explorar o potencial disruptivo, a necessidade de adoção precoce e os desafios de desenvolver tais capacidades no Brasil.</p>
                             </div>
                              <div>
-                                <h5 class="font-bold text-lg mb-2 text-slate-700">Veículos Hipersônicos</h5>
-                                <p class="text-slate-600">O desenvolvimento de aeronaves hipersônicas pela FAB representa uma mudança de paradigma no poder aéreo. A redação pode discutir as vantagens estratégicas (velocidade, dissuasão) e como essa tecnologia pode remodelar o combate aéreo e as estratégias de defesa.</p>
+                                <h5 class="font-bold text-lg mb-2 text-slate-700 dark:text-slate-200">Veículos Hipersônicos</h5>
+                                <p class="text-slate-700 dark:text-slate-300">O desenvolvimento de aeronaves hipersônicas pela FAB representa uma mudança de paradigma no poder aéreo. A redação pode discutir as vantagens estratégicas (velocidade, dissuasão) e como essa tecnologia pode remodelar o combate aéreo e as estratégias de defesa.</p>
                             </div>
                             <div>
-                                <h5 class="font-bold text-lg mb-2 text-slate-700">Autonomia Tecnológica e Soberania</h5>
-                                <p class="text-slate-600">A colaboração entre Forças Armadas, academia e indústria é vista como fundamental para desenvolver "tecnologias críticas" e manter a "soberania nacional". O tema pode focar na importância da P&D doméstica e na redução da dependência de fornecedores estrangeiros.</p>
+                                <h5 class="font-bold text-lg mb-2 text-slate-700 dark:text-slate-200">Autonomia Tecnológica e Soberania</h5>
+                                <p class="text-slate-700 dark:text-slate-300">A colaboração entre Forças Armadas, academia e indústria é vista como fundamental para desenvolver "tecnologias críticas" e manter a "soberania nacional". O tema pode focar na importância da P&D doméstica e na redução da dependência de fornecedores estrangeiros.</p>
                             </div>
                         </div>
                     `
@@ -342,16 +412,16 @@
                     conteudo: `
                          <div class="space-y-6">
                             <div>
-                                <h5 class="font-bold text-lg mb-2 text-slate-700">Proteção Ambiental como Missão</h5>
-                                <p class="text-slate-600">A doutrina da FAB inclui "defender, preservar e recuperar o meio ambiente". A atuação na Amazônia e programas como o SIRIUS (redução de emissões) mostram que a proteção ambiental está integrada à missão operacional e à defesa da soberania.</p>
+                                <h5 class="font-bold text-lg mb-2 text-slate-700 dark:text-slate-200">Proteção Ambiental como Missão</h5>
+                                <p class="text-slate-700 dark:text-slate-300">A doutrina da FAB inclui "defender, preservar e recuperar o meio ambiente". A atuação na Amazônia e programas como o SIRIUS (redução de emissões) mostram que a proteção ambiental está integrada à missão operacional e à defesa da soberania.</p>
                             </div>
                             <div>
-                                <h5 class="font-bold text-lg mb-2 text-slate-700">Eficiência Energética e Energias Renováveis</h5>
-                                <p class="text-slate-600">O uso de energia solar em destacamentos e a adoção de práticas sustentáveis em novas construções demonstram um ganho estratégico. O tema pode abordar segurança energética, redução de custos e de encargos logísticos como vantagens para a prontidão militar.</p>
+                                <h5 class="font-bold text-lg mb-2 text-slate-700 dark:text-slate-200">Eficiência Energética e Energias Renováveis</h5>
+                                <p class="text-slate-700 dark:text-slate-300">O uso de energia solar em destacamentos e a adoção de práticas sustentáveis em novas construções demonstram um ganho estratégico. O tema pode abordar segurança energética, redução de custos e de encargos logísticos como vantagens para a prontidão militar.</p>
                             </div>
                             <div>
-                                <h5 class="font-bold text-lg mb-2 text-slate-700">Desafios Climáticos e Segurança</h5>
-                                 <p class="text-slate-600">As mudanças climáticas, impactando recursos como água e alimentos, são cada vez mais vistas como ameaças à segurança nacional. A redação pode explorar o conceito de "segurança climática" e o papel das Forças Armadas na mitigação de seus impactos.</p>
+                                <h5 class="font-bold text-lg mb-2 text-slate-700 dark:text-slate-200">Desafios Climáticos e Segurança</h5>
+                                 <p class="text-slate-700 dark:text-slate-300">As mudanças climáticas, impactando recursos como água e alimentos, são cada vez mais vistas como ameaças à segurança nacional. A redação pode explorar o conceito de "segurança climática" e o papel das Forças Armadas na mitigação de seus impactos.</p>
                             </div>
                         </div>
                     `
@@ -359,10 +429,12 @@
             ]
         };
 
+        let myChart; // Variável global para a instância do Chart.js
+
         document.addEventListener('DOMContentLoaded', () => {
             const ctx = document.getElementById('temasChart').getContext('2d');
             
-            const chart = new Chart(ctx, {
+            myChart = new Chart(ctx, { // Atribui à variável global
                 type: 'bar',
                 data: {
                     labels: appData.temas.map(t => t.cluster),
@@ -412,7 +484,8 @@
                                 },
                                 font: {
                                     weight: 'bold'
-                                }
+                                },
+                                color: (document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#334155') 
                             }
                         },
                         y: {
@@ -425,7 +498,7 @@
                                     size: 14,
                                     weight: '500'
                                 },
-                                color: '#334155' // slate-700
+                                color: (document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#334155')
                             }
                         }
                     },
@@ -519,6 +592,42 @@
                 observer.observe(section);
             });
 
+            // Dark Mode Toggle Logic
+            const themeToggle = document.getElementById('themeToggle');
+            const themeIcon = document.getElementById('themeIcon');
+            const htmlElement = document.documentElement;
+
+            // Apply theme on load
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                htmlElement.classList.add('dark');
+                themeIcon.textContent = '🌙';
+            } else {
+                htmlElement.classList.remove('dark');
+                localStorage.theme = 'light'; // Ensure light mode is set if no preference or explicitly light
+                themeIcon.textContent = '☀️';
+            }
+
+            // Function to update chart colors based on theme
+            function updateChartColors() {
+                const isDark = htmlElement.classList.contains('dark');
+                myChart.options.scales.x.ticks.color = isDark ? '#cbd5e1' : '#334155';
+                myChart.options.scales.y.ticks.color = isDark ? '#cbd5e1' : '#334155';
+                myChart.update();
+            }
+
+            themeToggle.addEventListener('click', () => {
+                if (htmlElement.classList.contains('dark')) {
+                    htmlElement.classList.remove('dark');
+                    localStorage.theme = 'light';
+                    themeIcon.textContent = '☀️';
+                } else {
+                    htmlElement.classList.add('dark');
+                    localStorage.theme = 'dark';
+                    themeIcon.textContent = '🌙';
+                }
+                updateChartColors(); // Update chart colors immediately
+            });
+            updateChartColors(); // Initial chart color update on page load
 
             // Gemini API Integration - Argumentation Generator
             const temaSelect = document.getElementById('temaSelect');
@@ -529,23 +638,28 @@
             const argumentosList = document.getElementById('argumentosList');
 
             // Gemini API Integration - Reflection Questions Generator
-            const perguntaTemaSelect = document.getElementById('perguntaTemaSelect'); // Moved declaration here
+            const perguntaTemaSelect = document.getElementById('perguntaTemaSelect'); 
             const gerarPerguntasBtn = document.getElementById('gerarPerguntasBtn');
             const loadingPerguntasSpinner = document.getElementById('loadingPerguntasSpinner');
             const errorPerguntasContainer = document.getElementById('errorPerguntasContainer');
             const perguntasGeradasDiv = document.getElementById('perguntasGeradas');
             const perguntasList = document.getElementById('perguntasList');
 
-            // Populate the theme dropdowns
-            appData.temas.forEach(tema => {
-                const option = document.createElement('option');
-                option.value = tema.cluster;
-                option.textContent = tema.cluster;
-                temaSelect.appendChild(option);
+            // Function to populate theme dropdowns
+            function populateThemeDropdowns() {
+                temaSelect.innerHTML = '';
+                perguntaTemaSelect.innerHTML = '';
+                appData.temas.forEach(tema => {
+                    const option = document.createElement('option');
+                    option.value = tema.cluster;
+                    option.textContent = tema.cluster;
+                    temaSelect.appendChild(option);
 
-                const perguntaOption = option.cloneNode(true); // Clone for the new dropdown
-                perguntaTemaSelect.appendChild(perguntaOption);
-            });
+                    const perguntaOption = option.cloneNode(true); 
+                    perguntaTemaSelect.appendChild(perguntaOption);
+                });
+            }
+            populateThemeDropdowns(); // Initial population
 
             gerarArgumentosBtn.addEventListener('click', async () => {
                 const selectedTheme = temaSelect.value;
@@ -576,7 +690,7 @@
                     }
                 };
 
-                const apiKey = "AIzaSyB7AyliYun2KKB2HA-Ui3M1gOFk7bLPyHM"; // If you want to use models other than gemini-2.0-flash or imagen-3.0-generate-002, provide an API key here. Otherwise, leave this as-is.
+                const apiKey = "AIzaSyB7AyliYun2KKB2HA-Ui3M1gOFk7bLPyHM"; 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                 try {
@@ -648,7 +762,7 @@
                     }
                 };
 
-                const apiKey = "AIzaSyB7AyliYun2KKB2HA-Ui3M1gOFk7bLPyHM"; // If you want to use models other than gemini-2.0-flash or imagen-3.0-generate-002, provide an API key here. Otherwise, leave this as-is.
+                const apiKey = "AIzaSyB7AyliYun2KKB2HA-Ui3M1gOFk7bLPyHM"; 
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
                 try {
@@ -689,6 +803,133 @@
                     loadingPerguntasSpinner.classList.add('hidden');
                 }
             });
+
+            // Add Custom Theme Logic
+            const addThemeForm = document.getElementById('addThemeForm');
+            const newThemeClusterInput = document.getElementById('newThemeCluster');
+            const newThemeProbInput = document.getElementById('newThemeProb');
+            const newSubtheme1TitleInput = document.getElementById('newSubtheme1Title');
+            const newSubtheme1DetailsInput = document.getElementById('newSubtheme1Details');
+            const newSubtheme2TitleInput = document.getElementById('newSubtheme2Title');
+            const newSubtheme2DetailsInput = document.getElementById('newSubtheme2Details');
+            const newSubtheme3TitleInput = document.getElementById('newSubtheme3Title');
+            const newSubtheme3DetailsInput = document.getElementById('newSubtheme3Details');
+            const addThemeMessage = document.getElementById('addThemeMessage');
+
+            addThemeForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+
+                const newCluster = newThemeClusterInput.value.trim();
+                const newProb = parseInt(newThemeProbInput.value, 10);
+
+                if (!newCluster || isNaN(newProb) || newProb < 0 || newProb > 100) {
+                    addThemeMessage.classList.remove('hidden');
+                    addThemeMessage.className = 'text-center mt-4 text-red-600';
+                    addThemeMessage.textContent = 'Por favor, preencha o Nome do Tema e a Probabilidade corretamente (entre 0 e 100).';
+                    return;
+                }
+
+                // Check for duplicate theme name
+                if (appData.temas.some(tema => tema.cluster.toLowerCase() === newCluster.toLowerCase())) {
+                    addThemeMessage.classList.remove('hidden');
+                    addThemeMessage.className = 'text-center mt-4 text-orange-600';
+                    addThemeMessage.textContent = `O tema "${newCluster}" já existe.`;
+                    return;
+                }
+
+                let newContentHtml = '<div class="space-y-6">';
+
+                const subthemes = [
+                    { title: newSubtheme1TitleInput.value.trim(), details: newSubtheme1DetailsInput.value.trim() },
+                    { title: newSubtheme2TitleInput.value.trim(), details: newSubtheme2DetailsInput.value.trim() },
+                    { title: newSubtheme3TitleInput.value.trim(), details: newSubtheme3DetailsInput.value.trim() }
+                ];
+
+                let hasContent = false;
+                subthemes.forEach(st => {
+                    if (st.title && st.details) {
+                        newContentHtml += `
+                            <div>
+                                <h5 class="font-bold text-lg mb-2 text-slate-700 dark:text-slate-200">${st.title}</h5>
+                                <p class="text-slate-700 dark:text-slate-300">${st.details}</p>
+                            </div>
+                        `;
+                        hasContent = true;
+                    }
+                });
+                newContentHtml += '</div>';
+
+                if (!hasContent) {
+                    addThemeMessage.classList.remove('hidden');
+                    addThemeMessage.className = 'text-center mt-4 text-orange-600';
+                    addThemeMessage.textContent = 'Por favor, adicione pelo menos um subtema com título e detalhes para o novo tema.';
+                    return;
+                }
+
+
+                const newTheme = {
+                    cluster: newCluster,
+                    probabilidade: newProb,
+                    probabilidade_label: newProb >= 80 ? 'Alta' : (newProb >= 50 ? 'Média' : 'Baixa'),
+                    cor: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.7)`, // Random color
+                    corBorda: `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`, // Random color
+                    conteudo: newContentHtml
+                };
+
+                appData.temas.push(newTheme);
+                appData.temas.sort((a, b) => b.probabilidade - a.probabilidade); // Sort by probability
+
+                // Update Chart
+                myChart.data.labels = appData.temas.map(t => t.cluster);
+                myChart.data.datasets[0].data = appData.temas.map(t => t.probabilidade);
+                myChart.data.datasets[0].backgroundColor = appData.temas.map(t => t.cor);
+                myChart.data.datasets[0].borderColor = appData.temas.map(t => t.corBorda);
+                myChart.update();
+
+                // Update dropdowns
+                populateThemeDropdowns();
+
+                // Store updated data in localStorage (optional, but good for persistence)
+                localStorage.setItem('customThemes', JSON.stringify(appData.temas.filter(t => !t.hasOwnProperty('original')))); // Only store custom ones if original data is hardcoded
+
+                addThemeMessage.classList.remove('hidden');
+                addThemeMessage.className = 'text-center mt-4 text-green-600';
+                addThemeMessage.textContent = `Tema "${newCluster}" adicionado com sucesso!`;
+
+                // Clear form
+                newThemeClusterInput.value = '';
+                newThemeProbInput.value = '';
+                newSubtheme1TitleInput.value = '';
+                newSubtheme1DetailsInput.value = '';
+                newSubtheme2TitleInput.value = '';
+                newSubtheme2DetailsInput.value = '';
+                newSubtheme3TitleInput.value = '';
+                newSubtheme3DetailsInput.value = '';
+            });
+
+            // Load custom themes from localStorage on initial load
+            const storedThemes = localStorage.getItem('customThemes');
+            if (storedThemes) {
+                try {
+                    const parsedThemes = JSON.parse(storedThemes);
+                    parsedThemes.forEach(theme => {
+                        // Ensure original data doesn't get duplicated if theme was originally hardcoded
+                        if (!appData.temas.some(t => t.cluster === theme.cluster)) {
+                             appData.temas.push(theme);
+                        }
+                    });
+                    appData.temas.sort((a, b) => b.probabilidade - a.probabilidade);
+                    myChart.data.labels = appData.temas.map(t => t.cluster);
+                    myChart.data.datasets[0].data = appData.temas.map(t => t.probabilidade);
+                    myChart.data.datasets[0].backgroundColor = appData.temas.map(t => t.cor);
+                    myChart.data.datasets[0].borderColor = appData.temas.map(t => t.corBorda);
+                    myChart.update();
+                    populateThemeDropdowns();
+                } catch (e) {
+                    console.error("Erro ao carregar temas do localStorage:", e);
+                    localStorage.removeItem('customThemes'); // Clear corrupt data
+                }
+            }
         });
     </script>
 </body>
